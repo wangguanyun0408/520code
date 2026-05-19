@@ -2,27 +2,30 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>520驚喜</title>
     <style>
-        body {
+        /* 針對手機瀏覽器進行滿版優化，使用 dvh 解決上下工具列造成的畫面跳動 */
+        html, body {
             margin: 0;
             padding: 0;
-            background-color: #050010; /* 深邃的夜空背景色 */
+            width: 100vw;
+            height: 100dvh; 
+            background-color: #050010;
             overflow: hidden;
             font-family: 'Arial', sans-serif;
             color: white;
         }
         
-        /* 背景的畫布 (流星與代碼雨) */
         #canvas {
-            position: absolute;
+            position: fixed; /* 改用 fixed 確保完全固定在背景 */
             top: 0;
             left: 0;
+            width: 100vw;
+            height: 100dvh;
             z-index: 1;
         }
 
-        /* 讓畫面中間的元素絕對置中 */
         .center-container {
             position: absolute;
             top: 50%;
@@ -30,21 +33,23 @@
             transform: translate(-50%, -50%);
             z-index: 2;
             text-align: center;
-            pointer-events: none; /* 讓滑鼠點擊可以穿透 */
+            pointer-events: none;
+            width: 100%; /* 確保文字在手機上不會被截斷 */
         }
 
-        /* ================= 階段一：愛心 ================= */
+        /* --- 階段一：愛心 --- */
         #phase-heart {
             opacity: 1;
-            transition: opacity 1.5s ease-in-out; /* 淡出動畫時間 */
+            transition: opacity 1.5s ease-in-out;
+            display: flex;
+            justify-content: center;
         }
         
-        /* 使用 CSS 畫出一顆發光的愛心 */
         .heart {
             position: relative;
             width: 100px;
             height: 90px;
-            animation: heartbeat 1.2s infinite alternate; /* 心跳動畫 */
+            animation: heartbeat 1.2s infinite alternate;
             filter: drop-shadow(0 0 15px #ff3385) drop-shadow(0 0 35px #ff0066);
         }
         .heart::before,
@@ -55,7 +60,7 @@
             width: 50px;
             height: 80px;
             border-radius: 50px 50px 0 0;
-            background: #ff66b2; /* 愛心顏色 */
+            background: #ff66b2;
         }
         .heart::before {
             left: 50px;
@@ -73,26 +78,50 @@
             to { transform: scale(1.15); }
         }
 
-        /* ================= 階段二：文字 ================= */
+        /* --- 階段二：文字 --- */
         #phase-text {
-            opacity: 0; /* 一開始是隱藏的 */
-            transition: opacity 2s ease-in-out; /* 淡入動畫時間 */
-            text-shadow: 0 0 10px #ff66b2, 0 0 20px #ff66b2, 0 0 40px #ff0066;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            text-shadow: 0 0 15px #ff66b2, 0 0 25px #ff66b2, 0 0 50px #ff0066;
             white-space: nowrap;
         }
+        
+        /* 預設電腦版大小 */
         #phase-text h1 {
-            font-size: 6rem;
+            font-size: 7rem;
             margin: 0;
-            letter-spacing: 5px;
+            letter-spacing: 8px;
         }
         #phase-text p {
-            font-size: 2.5rem;
+            font-size: 3rem;
             margin: 10px 0 0 0;
+            letter-spacing: 4px;
         }
 
-        /* 用來控制隱藏的工具 class */
         .hidden {
             opacity: 0 !important;
+        }
+
+        /* ================= 手機版專屬優化 ================= */
+        @media (max-width: 768px) {
+            /* 調整手機版文字大小，避免超出螢幕邊界 */
+            #phase-text h1 {
+                font-size: 5rem;
+                letter-spacing: 5px;
+            }
+            #phase-text p {
+                font-size: 2.2rem;
+                letter-spacing: 2px;
+            }
+            
+            /* 稍微縮小愛心，讓視覺比例更精緻 */
+            .heart {
+                transform: scale(0.8);
+            }
+            @keyframes heartbeat {
+                from { transform: scale(0.8); }
+                to { transform: scale(0.95); }
+            }
         }
     </style>
 </head>
@@ -101,122 +130,117 @@
     <canvas id="canvas"></canvas>
 
     <div class="center-container">
-        
         <div id="phase-heart">
             <div class="heart"></div>
         </div>
-
         <div id="phase-text">
             <h1>520快樂</h1>
-            <p>祝天天開心</p>
+            <h1>祝天天開心<h1>
+            <p>重歸於好</p>
         </div>
-
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        
+        // 判斷是否為手機螢幕，動態調整代碼雨密度
+        let isMobile = window.innerWidth <= 768;
+        let fontSize = isMobile ? 12 : 16; // 手機字體變小，增加螢幕上的代碼行數
+        let columns;
+        let drops = [];
 
-        // --- 1. 浪漫代碼雨設定 ---
-        const texts = 'ILOVEU♡★'.split('');
-        const fontSize = 16;
-        const columns = canvas.width / fontSize;
-        const drops = [];
-        // 讓代碼一開始就隨機分佈在畫面上，而不是從零開始掉
-        for (let x = 0; x < columns; x++) {
-            drops[x] = Math.random() * (canvas.height / fontSize);
+        function initCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            isMobile = window.innerWidth <= 768;
+            fontSize = isMobile ? 11 : 16; // 進一步提高手機版密度
+            columns = Math.floor(canvas.width / fontSize);
+            
+            drops = [];
+            for (let x = 0; x < columns; x++) {
+                drops[x] = Math.random() * (canvas.height / fontSize);
+            }
         }
+        
+        initCanvasSize();
 
-        // --- 2. 流星雨設定 ---
+        const texts = 'ILOVEU♡★'.split('');
+
         class Meteor {
             constructor() {
                 this.reset();
-                // 為了讓一打開網頁就有流星，隨機初始化位置
                 this.x = Math.random() * canvas.width;
                 this.y = Math.random() * canvas.height;
             }
             reset() {
-                // 流星從右上方隨機出現
                 this.x = Math.random() * canvas.width + canvas.width / 3;
                 this.y = -100;
-                this.length = Math.random() * 80 + 50; // 流星尾巴長度
-                this.speed = Math.random() * 15 + 10;  // 墜落速度
+                this.length = Math.random() * 80 + 50;
+                // 手機螢幕較窄，稍微調整流星速度讓視覺停留久一點
+                this.speed = isMobile ? (Math.random() * 10 + 8) : (Math.random() * 15 + 10);  
             }
             draw() {
                 ctx.beginPath();
-                // 流星頭部
                 ctx.moveTo(this.x, this.y);
-                // 流星尾部 (往右上角延伸)
                 ctx.lineTo(this.x + this.length, this.y - this.length);
                 
-                // 漸層讓流星有拖曳閃爍感
                 let grad = ctx.createLinearGradient(this.x, this.y, this.x + this.length, this.y - this.length);
-                grad.addColorStop(0, 'rgba(255, 255, 255, 1)'); // 頭部最亮
-                grad.addColorStop(1, 'rgba(255, 255, 255, 0)'); // 尾部透明
+                grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+                grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
                 
                 ctx.strokeStyle = grad;
-                ctx.lineWidth = 2;
+                ctx.lineWidth = isMobile ? 1.5 : 2; // 手機版流星尾巴稍微細緻一點
                 ctx.stroke();
             }
             update() {
-                // 流星往左下角移動
                 this.x -= this.speed;
                 this.y += this.speed;
-                // 飛出螢幕後重置
                 if (this.x < -this.length || this.y > canvas.height + this.length) {
                     this.reset();
                 }
             }
         }
 
-        // 產生 12 顆流星
+        // 增加流星數量，手機畫面上看起來會更熱鬧
+        const meteorCount = isMobile ? 15 : 12;
         const meteors = [];
-        for(let i = 0; i < 12; i++) {
+        for(let i = 0; i < meteorCount; i++) {
             meteors.push(new Meteor());
         }
 
-        // --- 3. 繪圖迴圈 ---
         function draw() {
-            // 背景塗上帶有透明度的深色，製造代碼雨的殘影
-            ctx.fillStyle = 'rgba(5, 0, 16, 0.15)';
+            // 加深殘影背景色，讓粉色發光字體與流星對比更強烈
+            ctx.fillStyle = 'rgba(5, 0, 16, 0.12)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 畫代碼雨
             ctx.fillStyle = '#ff66b2';
             ctx.font = fontSize + 'px arial';
             for (let i = 0; i < drops.length; i++) {
                 const text = texts[Math.floor(Math.random() * texts.length)];
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                
+                // 調整掉落機率，讓雨勢看起來更隨機自然
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.98) {
                     drops[i] = 0;
                 }
                 drops[i]++;
             }
 
-            // 畫流星
             for(let meteor of meteors) {
                 meteor.update();
                 meteor.draw();
             }
         }
 
-        // 每 30 毫秒刷新一次畫面
         setInterval(draw, 30);
 
-        // 視窗大小改變時自動調整畫布
-        window.addEventListener('resize', () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
+        // 確保手機翻轉或視窗改變大小時，畫面重新佈局
+        window.addEventListener('resize', initCanvasSize);
 
-        // --- 4. 動畫時序控制 (核心驚喜切換) ---
-        // 5000 毫秒 (即 5 秒) 後執行
+        // 5 秒後轉場
         setTimeout(() => {
-            // 隱藏愛心
             document.getElementById('phase-heart').classList.add('hidden');
-            // 顯示文字
             const textElement = document.getElementById('phase-text');
             textElement.classList.remove('hidden');
             textElement.style.opacity = 1; 
