@@ -1,1 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>給寶寶的 520 驚喜</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            overflow: hidden; /* 隱藏滾動條 */
+            font-family: 'Arial', sans-serif;
+        }
+        #canvas {
+            display: block;
+        }
+        /* 中間的告白文字樣式 */
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffccff;
+            text-align: center;
+            pointer-events: none; /* 讓滑鼠點擊可以穿透到背景 */
+            text-shadow: 0 0 10px #ff66b2, 0 0 20px #ff66b2, 0 0 40px #ff0066;
+            animation: heartbeat 1.5s infinite alternate; /* 簡單的心跳動畫 */
+        }
+        .message h1 {
+            font-size: 6rem;
+            margin: 0;
+        }
+        .message p {
+            font-size: 2rem;
+            margin: 10px 0 0 0;
+        }
 
+        @keyframes heartbeat {
+            from { transform: translate(-50%, -50%) scale(1); }
+            to { transform: translate(-50%, -50%) scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="message">
+        <h1>520</h1>
+        <p>寶寶，我愛你！</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // 設定畫布大小為全螢幕
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 掉落的文字內容
+        const texts = 'ILOVEU♡'.split('');
+        const fontSize = 16;
+        const columns = canvas.width / fontSize; // 計算有幾列
+        const drops = [];
+
+        // 初始化每一列的 Y 座標
+        for (let x = 0; x < columns; x++) {
+            drops[x] = 1;
+        }
+
+        function draw() {
+            // 畫上帶有透明度的黑色背景，製造代碼雨的拖曳尾跡效果
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 設定代碼雨的顏色與字體
+            ctx.fillStyle = '#ff66b2'; 
+            ctx.font = fontSize + 'px arial';
+
+            // 繪製文字
+            for (let i = 0; i < drops.length; i++) {
+                const text = texts[Math.floor(Math.random() * texts.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                // 如果文字掉到畫面最底端，或者隨機觸發，就回到頂端重新掉落
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        // 每 33 毫秒執行一次畫圖 (大約 30 FPS)
+        setInterval(draw, 33);
+
+        // 確保當手機或電腦視窗改變大小時，畫布能跟著調整
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
